@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -115,23 +116,25 @@ fun MenuScreen(
                     if (isSelected) {
                         FilledTonalButton(
                             onClick = {},
-                            modifier = Modifier.height(36.dp),
-                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.size(40.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(0.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = colors.Primary,
                                 contentColor   = Color.White
                             )
-                        ) { Text(flag, fontSize = 16.sp) }
+                        ) { Text(flag, fontSize = 18.sp) }
                     } else {
                         OutlinedButton(
                             onClick = {
                                 LanguageManager.setLocale(code)
                                 currentLang.value = code
                             },
-                            modifier = Modifier.height(36.dp),
-                            shape  = RoundedCornerShape(10.dp),
-                            border = BorderStroke(1.5.dp, colors.Divider)
-                        ) { Text(flag, fontSize = 16.sp) }
+                            modifier = Modifier.size(40.dp),
+                            shape  = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.5.dp, colors.Divider),
+                            contentPadding = PaddingValues(0.dp)
+                        ) { Text(flag, fontSize = 18.sp) }
                     }
                 }
             }
