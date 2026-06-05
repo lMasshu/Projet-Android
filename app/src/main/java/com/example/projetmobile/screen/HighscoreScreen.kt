@@ -42,23 +42,33 @@ import com.example.projetmobile.R
 @Composable
 fun HighscoreScreen(
     context: Context,
+    newScore: Int,
     onMenuClick: () -> Unit
 ) {
+    val colors = AppColors
     val dbHelper = remember { DatabaseHelper(context) }
     val scores = remember { dbHelper.getTop10Scores() }
 
-    val podiumColors = listOf(AppColors.Gold, AppColors.Silver, AppColors.Bronze)
+    val isTop3 = remember(newScore) {
+        if (newScore <= 0 || scores.isEmpty()) false
+        else {
+            val top3 = scores.take(3)
+            top3.any { it.score == newScore }
+        }
+    }
+
+    val podiumColors = listOf(colors.Gold, colors.Silver, colors.Bronze)
     val podiumBg = listOf(
-        Color(0xFFFFFBEB), // gold tint
-        Color(0xFFF8FAFC), // silver tint
-        Color(0xFFFFF7ED)  // bronze tint
+        colors.Gold.copy(alpha = 0.15f),
+        colors.Silver.copy(alpha = 0.15f),
+        colors.Bronze.copy(alpha = 0.15f)
     )
     val medalEmojis = listOf("🥇", "🥈", "🥉")
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppColors.Background)
+            .background(colors.Background)
     ) {
         // Top accent
         Box(
@@ -67,7 +77,7 @@ fun HighscoreScreen(
                 .height(220.dp)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFFEEEFFF), AppColors.Background)
+                        colors = listOf(colors.PrimaryLight, Color.Transparent)
                     )
                 )
         )
@@ -88,7 +98,7 @@ fun HighscoreScreen(
                 text = stringResource(R.string.highscores_title),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = AppColors.TextPrimary,
+                color = colors.TextPrimary,
                 textAlign = TextAlign.Center
             )
 
@@ -106,7 +116,7 @@ fun HighscoreScreen(
                         Spacer(Modifier.height(12.dp))
                         Text(
                             text = stringResource(R.string.no_scores),
-                            color = AppColors.TextSecondary,
+                            color = colors.TextSecondary,
                             fontSize = 16.sp,
                             textAlign = TextAlign.Center
                         )
@@ -121,6 +131,7 @@ fun HighscoreScreen(
                 ) {
                     itemsIndexed(scores) { index, entry ->
                         val isPodium = index < 3
+                        val isNewScoreRow = isPodium && entry.score == newScore
 
                         Card(
                             modifier = Modifier
@@ -131,7 +142,7 @@ fun HighscoreScreen(
                                 ),
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = if (isPodium) podiumBg[index] else AppColors.SurfaceCard
+                                containerColor = if (isPodium) podiumBg[index] else colors.SurfaceCard
                             )
                         ) {
                             Row(
@@ -151,12 +162,12 @@ fun HighscoreScreen(
                                         modifier = Modifier
                                             .size(36.dp)
                                             .clip(CircleShape)
-                                            .background(AppColors.PrimaryLight),
+                                            .background(colors.PrimaryLight),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = "${index + 1}",
-                                            color = AppColors.Primary,
+                                            color = colors.Primary,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp
                                         )
@@ -168,13 +179,13 @@ fun HighscoreScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = entry.name,
-                                        color = if (isPodium) podiumColors[index] else AppColors.TextPrimary,
+                                        color = if (isPodium) podiumColors[index] else colors.TextPrimary,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp
                                     )
                                     Text(
                                         text = entry.date,
-                                        color = AppColors.TextHint,
+                                        color = colors.TextHint,
                                         fontSize = 12.sp
                                     )
                                 }
@@ -185,14 +196,14 @@ fun HighscoreScreen(
                                         .clip(RoundedCornerShape(50.dp))
                                         .background(
                                             if (isPodium)
-                                                podiumColors[index].copy(alpha = 0.15f)
-                                            else AppColors.PrimaryLight
+                                                podiumColors[index].copy(alpha = 0.25f)
+                                            else colors.PrimaryLight
                                         )
                                         .padding(horizontal = 14.dp, vertical = 6.dp)
                                 ) {
                                     Text(
                                         text = "${entry.score}",
-                                        color = if (isPodium) podiumColors[index] else AppColors.Primary,
+                                        color = if (isPodium) podiumColors[index] else colors.Primary,
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 18.sp
                                     )
@@ -211,7 +222,7 @@ fun HighscoreScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.Primary),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
@@ -223,6 +234,11 @@ fun HighscoreScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+        }
+
+        // Overlay Confettis
+        if (isTop3) {
+            ConfettiHost()
         }
     }
 }
