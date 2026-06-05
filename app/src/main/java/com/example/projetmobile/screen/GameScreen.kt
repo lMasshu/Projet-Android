@@ -203,7 +203,7 @@ fun GameScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val name = playerName.trim().ifEmpty { "Anonyme" }
+                        val name = playerName.trim().ifEmpty { context.getString(R.string.anonymous) }
                         dbHelper.insertScore(name, score)
                         showGameOverDialog = false
                         onGameOver()
