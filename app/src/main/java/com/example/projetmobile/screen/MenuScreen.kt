@@ -104,12 +104,12 @@ fun MenuScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo CalcGo
+            // Logo CalcGo (fond natif inclus dans le PNG)
             Image(
                 painter = painterResource(R.drawable.ic_logo),
                 contentDescription = "CalcGo Logo",
                 modifier = Modifier
-                    .size(140.dp)
+                    .size(160.dp)
                     .scale(pulseScale)
             )
 
