@@ -6,6 +6,8 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,6 +31,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,13 +39,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.projetmobile.R
 
-// Light theme color palette
+// Light theme color palette — partagée avec GameScreen & HighscoreScreen
 object AppColors {
     val Background      = Color(0xFFF5F7FF)
     val SurfaceCard     = Color(0xFFFFFFFF)
-    val Primary         = Color(0xFF5B5FEF)       // Indigo vif
+    val Primary         = Color(0xFF5B5FEF)
     val PrimaryLight    = Color(0xFFEEEFFF)
-    val Secondary       = Color(0xFF10B981)       // Émeraude
+    val Secondary       = Color(0xFF10B981)
     val SecondaryLight  = Color(0xFFD1FAE5)
     val Error           = Color(0xFFEF4444)
     val ErrorLight      = Color(0xFFFFE4E4)
@@ -70,7 +74,6 @@ fun MenuScreen(
         label = "pulse_scale"
     )
 
-    // Subtle light gradient background
     val gradientBackground = Brush.linearGradient(
         colors = listOf(Color(0xFFF0F4FF), Color(0xFFFAF5FF), Color(0xFFEEF2FF)),
         start = Offset(0f, 0f),
@@ -82,7 +85,7 @@ fun MenuScreen(
             .fillMaxSize()
             .background(gradientBackground)
     ) {
-        // Top decorative blob
+        // Blob décoratif en haut
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -101,16 +104,18 @@ fun MenuScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo emoji
-            Text(
-                text = "🧮",
-                fontSize = 84.sp,
-                modifier = Modifier.scale(pulseScale)
+            // Logo CalcGo
+            Image(
+                painter = painterResource(R.drawable.ic_logo),
+                contentDescription = "CalcGo Logo",
+                modifier = Modifier
+                    .size(140.dp)
+                    .scale(pulseScale)
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // App title
+            // Titre
             Text(
                 text = stringResource(R.string.app_title),
                 fontSize = 38.sp,
@@ -131,16 +136,14 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.height(56.dp))
 
-            // Play button – filled, Primary color
+            // Bouton Jouer
             Button(
                 onClick = onPlayClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AppColors.Primary
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
@@ -153,17 +156,15 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Highscores button – outlined
+            // Bouton Highscores
             OutlinedButton(
                 onClick = onHighscoreClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),
                 shape = RoundedCornerShape(18.dp),
-                border = androidx.compose.foundation.BorderStroke(2.dp, AppColors.Primary),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = AppColors.Primary
-                )
+                border = BorderStroke(2.dp, AppColors.Primary),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.Primary)
             ) {
                 Text(
                     text = stringResource(R.string.btn_highscores),
