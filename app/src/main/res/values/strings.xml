@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MathQuiz</string>
-    <string name="app_title">Quiz\nMathématique</string>
+    <string name="app_name">calcGo</string>
+    <string name="app_title">CALC GO</string>
     <string name="app_subtitle">Testez vos calculs !</string>
 
     <!-- Boutons -->
