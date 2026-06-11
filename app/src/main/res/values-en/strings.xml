@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">calcGo</string>
+    <string name="app_title">CALC GO</string>
+    <string name="app_subtitle">Test your math skills!</string>
+
+    <!-- Buttons -->
+    <string name="btn_play">▶  Play</string>
+    <string name="btn_highscores">🏆  Highscores</string>
+    <string name="btn_menu">Menu</string>
+    <string name="btn_validate">Validate</string>
+
+    <!-- Game -->
+    <string name="score_label">Score: %d</string>
+    <string name="answer_label">Your answer</string>
+    <string name="correct">✓ Correct!</string>
+    <string name="wrong">✗ Wrong answer!</string>
+    <string name="back_arrow">←</string>
+
+    <!-- Game Over -->
+    <string name="game_over_title">Game Over</string>
+    <string name="game_over_score">Final score: %d</string>
+    <string name="enter_name">Enter your name to save your score:</string>
+    <string name="name_placeholder">Your name…</string>
+    <string name="save_score">Save Score</string>
+    <string name="anonymous">Anonymous</string>
+
+    <!-- Highscores -->
+    <string name="highscores_title">Highscores</string>
+    <string name="no_scores">No scores yet.\nBe the first!</string>
+
+    <!-- Language -->
+    <string name="lang_label">Language</string>
+    <string name="lang_fr">🇫🇷 Français</string>
+    <string name="lang_en">🇬🇧 English</string>
+</resources>

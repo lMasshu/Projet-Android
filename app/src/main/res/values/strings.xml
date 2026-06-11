@@ -1,3 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ProjetMobile</string>
+    <string name="app_name">calcGo</string>
+    <string name="app_title">CALC GO</string>
+    <string name="app_subtitle">Testez vos calculs !</string>
+
+    <!-- Boutons -->
+    <string name="btn_play">▶  Jouer</string>
+    <string name="btn_highscores">🏆  Meilleurs scores</string>
+    <string name="btn_menu">Menu</string>
+    <string name="btn_validate">Valider</string>
+
+    <!-- Jeu -->
+    <string name="score_label">Score : %d</string>
+    <string name="answer_label">Votre réponse</string>
+    <string name="correct">✓ Bonne réponse !</string>
+    <string name="wrong">✗ Mauvaise réponse !</string>
+    <string name="back_arrow">←</string>
+
+    <!-- Fin de partie -->
+    <string name="game_over_title">Partie terminée</string>
+    <string name="game_over_score">Score final : %d</string>
+    <string name="enter_name">Entrez votre prénom pour sauvegarder :</string>
+    <string name="name_placeholder">Votre prénom…</string>
+    <string name="save_score">Enregistrer</string>
+    <string name="anonymous">Anonyme</string>
+
+    <!-- Highscores -->
+    <string name="highscores_title">Meilleurs Scores</string>
+    <string name="no_scores">Aucun score enregistré.\nSoyez le premier !</string>
+
+    <!-- Langue -->
+    <string name="lang_label">Langue</string>
+    <string name="lang_fr">🇫🇷 Français</string>
+    <string name="lang_en">🇬🇧 English</string>
 </resources>
