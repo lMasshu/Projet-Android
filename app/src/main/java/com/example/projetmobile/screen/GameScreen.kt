@@ -1,7 +1,10 @@
 package com.example.projetmobile.screen
 
 import android.content.Context
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -14,9 +17,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -32,7 +37,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -44,6 +51,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -53,9 +61,22 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.request.ImageRequest
 import com.example.projetmobile.DatabaseHelper
 import com.example.projetmobile.R
+import kotlinx.coroutines.delay
 import kotlin.random.Random
+
+data class DuckState(
+    val id: Int,
+    val offsetX: Float,
+    val startYFraction: Float,
+    val sizeDp: Float
+)
 
 data class MathOperation(
     val a: Int,
@@ -78,11 +99,12 @@ fun generateOperation(): MathOperation {
 @Composable
 fun GameScreen(
     context: Context,
-    onGameOver: (Int) -> Unit,   // ← passe le score final
+    onGameOver: (Int) -> Unit,
     onMenuClick: () -> Unit
 ) {
     val colors = AppColors
     val dbHelper = remember { DatabaseHelper(context) }
+
     var score      by rememberSaveable { mutableIntStateOf(0) }
     var lives      by rememberSaveable { mutableIntStateOf(3) }
     var operation  by remember { mutableStateOf(generateOperation()) }
@@ -93,22 +115,103 @@ fun GameScreen(
     var showQuestion by rememberSaveable { mutableStateOf(true) }
     val keyboard = LocalSoftwareKeyboardController.current
 
+    // Timer
+    var timeLeft by remember { mutableFloatStateOf(1f) }
+    var isPlaying by remember { mutableStateOf(true) }
+
+    val animatedTimeLeft by animateFloatAsState(
+        targetValue = timeLeft,
+        animationSpec = tween(durationMillis = 100, easing = LinearEasing),
+        label = "time_anim"
+    )
+
+    val timerColor = when {
+        animatedTimeLeft > 0.5f -> Color(0xFF4CAF50)
+        animatedTimeLeft > 0.25f -> Color(0xFFFF9800)
+        else -> Color(0xFFF44336)
+    }
+
+    val duckList = remember { mutableStateListOf(DuckState(0, 0f, 0.25f, 120f)) }
+
+    // ── NOUVEAU : Couleur de fond aléatoire ──
+    var backgroundColor by remember { mutableStateOf(colors.Background) }
+
+    // On écoute le changement de question pour générer la couleur de fond et gérer l'armée de canards
+    LaunchedEffect(operation) {
+        // Changement de couleur aléatoire (on évite les couleurs trop sombres/claires pour le contraste)
+        val r = Random.nextInt(40, 200)
+        val g = Random.nextInt(40, 200)
+        val b = Random.nextInt(40, 200)
+        backgroundColor = Color(r, g, b)
+
+        // Gestion de l'armée de canards
+        val targetDucks = 1 + (score/10)
+        if (score == 0) {
+            duckList.clear()
+            duckList.add(DuckState(0, 0f, 0.25f, 120f))
+        } else if (duckList.size < targetDucks) {
+            for (i in duckList.size until targetDucks) {
+                val randX = Random.nextInt(-140, 140).toFloat()
+                val randY = Random.nextFloat() * 0.20f + 0.25f
+                val randSize = Random.nextInt(70, 130).toFloat()
+                duckList.add(DuckState(i, randX, randY, randSize))
+            }
+        }
+    }
+
     fun validate() {
+        if (!isPlaying || feedback != null) return
         val ans = userInput.trim().toIntOrNull() ?: return
         keyboard?.hide()
+
+        isPlaying = false
+
         if (ans == operation.result) {
-            score += 10; feedback = true; userInput = ""; showQuestion = false
+            score += 10
+            feedback = true
         } else {
-            lives -= 1; feedback = false; userInput = ""
-            if (lives <= 0) showDialog = true
+            feedback = false
+            lives -= 1
+        }
+        userInput = ""
+
+        if (lives <= 0) {
+            showDialog = true
+        }
+    }
+
+    // Le moteur du temps
+    LaunchedEffect(operation, isPlaying) {
+        if (isPlaying && feedback == null) {
+            timeLeft = 1f
+
+            while (timeLeft > 0f && isPlaying) {
+                delay(100)
+                val speedMultiplier = 1f + (score / 100f)
+                timeLeft -= 0.01f * speedMultiplier
+
+                if (timeLeft <= 0f) {
+                    timeLeft = 0f
+                    isPlaying = false
+                    lives -= 1
+
+                    if (lives <= 0) {
+                        showDialog = true
+                    } else {
+                        feedback = false
+                        userInput = ""
+                    }
+                }
+            }
         }
     }
 
     LaunchedEffect(feedback) {
-        if (feedback != null) {
-            kotlinx.coroutines.delay(700)
+        if (feedback != null && lives > 0) {
+            delay(1000)
             feedback = null
-            if (lives > 0) { operation = generateOperation(); showQuestion = true }
+            operation = generateOperation()
+            isPlaying = true
         }
     }
 
@@ -159,7 +262,7 @@ fun GameScreen(
                         val name = playerName.trim().ifEmpty { context.getString(R.string.anonymous) }
                         dbHelper.insertScore(name, score)
                         showDialog = false
-                        onGameOver(score)   // ← score transmis
+                        onGameOver(score)
                     },
                     colors   = ButtonDefaults.buttonColors(containerColor = colors.Primary),
                     shape    = RoundedCornerShape(12.dp),
@@ -169,18 +272,57 @@ fun GameScreen(
         )
     }
 
-    // ── Écran de jeu ──────────────────────────────────────────────────────────
+    // ── Préparation du lecteur de GIF (Coil) ──
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components {
+                if (SDK_INT >= 28) {
+                    add(ImageDecoderDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
+            }
+            .build()
+    }
+
+    val screenHeight = LocalConfiguration.current.screenHeightDp.toFloat()
+    val maxDuckTravel = screenHeight * 0.45f
+
+    // ── Écran de jeu ──
+    // On applique la couleur dynamique combinée à un léger dégradé pour garder du style
     val bgGradient = Brush.linearGradient(
-        colors = listOf(colors.Background, colors.Background.copy(alpha = 0.95f)),
+        colors = listOf(backgroundColor, backgroundColor.copy(alpha = 0.85f)),
         start = Offset(0f, 0f), end = Offset(0f, 1000f)
     )
 
     Box(modifier = Modifier.fillMaxSize().background(bgGradient)) {
+
+        // Halo de lumière en haut
         Box(
             modifier = Modifier.fillMaxWidth().height(200.dp)
-                .background(Brush.verticalGradient(listOf(colors.PrimaryLight.copy(alpha = 0.4f), Color.Transparent)))
+                .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.2f), Color.Transparent)))
         )
 
+        // ── AFFICHAGE DE LA MEUTE DE CANARDS ──
+        duckList.forEach { duck ->
+            val baseYOffset = duck.startYFraction * screenHeight
+            val dynamicTravel = (1f - animatedTimeLeft) * maxDuckTravel
+            val currentYOffset = (baseYOffset + dynamicTravel).dp
+
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(R.drawable.walking_duck)
+                    .build(),
+                imageLoader = imageLoader,
+                contentDescription = "Un canard maléfique",
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(x = duck.offsetX.dp, y = currentYOffset)
+                    .size(duck.sizeDp.dp)
+            )
+        }
+
+        // ── INTERFACE PRINCIPALE ──
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -190,12 +332,12 @@ fun GameScreen(
             // Top bar
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onMenuClick) {
-                    Text("← ${stringResource(R.string.btn_menu)}", color = colors.TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("← ${stringResource(R.string.btn_menu)}", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
                 Box(
-                    modifier = Modifier.clip(RoundedCornerShape(50.dp)).background(colors.PrimaryLight).padding(horizontal = 18.dp, vertical = 8.dp)
+                    modifier = Modifier.clip(RoundedCornerShape(50.dp)).background(Color.White.copy(alpha = 0.2f)).padding(horizontal = 18.dp, vertical = 8.dp)
                 ) {
-                    Text(stringResource(R.string.score_label, score), color = colors.Primary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(stringResource(R.string.score_label, score), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
             }
 
@@ -206,26 +348,45 @@ fun GameScreen(
                 repeat(3) { i -> Text(if (i < lives) "❤️" else "🤍", fontSize = 30.sp, modifier = Modifier.padding(horizontal = 6.dp)) }
             }
 
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(20.dp))
+
+            // La Barre de Temps
+            LinearProgressIndicator(
+                progress = { animatedTimeLeft },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                color = timerColor,
+                trackColor = Color.White.copy(alpha = 0.3f)
+            )
+
+            // L'espace central vide dédié aux canards
+            Spacer(Modifier.weight(1f))
 
             // Carte question
-            AnimatedVisibility(visible = showQuestion, enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { -30 }) {
+            AnimatedVisibility(
+                visible = showQuestion,
+                enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { 30 }
+            ) {
                 Card(
-                    modifier = Modifier.fillMaxWidth().height(160.dp).shadow(8.dp, RoundedCornerShape(28.dp)),
-                    shape    = RoundedCornerShape(28.dp),
+                    modifier = Modifier.fillMaxWidth().height(80.dp).shadow(8.dp, RoundedCornerShape(20.dp)),
+                    shape    = RoundedCornerShape(20.dp),
                     colors   = CardDefaults.cardColors(containerColor = colors.SurfaceCard)
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${operation.a}  ${operation.operator}  ${operation.b}", fontSize = 42.sp, fontWeight = FontWeight.ExtraBold, color = colors.TextPrimary)
-                            Spacer(Modifier.height(4.dp))
-                            Text("= ?", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colors.Primary)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text("${operation.a}  ${operation.operator}  ${operation.b}", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = colors.TextPrimary)
+                            Spacer(Modifier.width(12.dp))
+                            Text("=", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = colors.TextSecondary)
+                            Spacer(Modifier.width(12.dp))
+                            Text("?", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = colors.Primary)
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Feedback
             feedback?.let { ok ->
@@ -242,6 +403,7 @@ fun GameScreen(
                 }
             }
 
+            // Zone de saisie + Bouton
             if (feedback == null) {
                 OutlinedTextField(
                     value = userInput, onValueChange = { userInput = it },
@@ -272,6 +434,8 @@ fun GameScreen(
                     Text(stringResource(R.string.btn_validate), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
